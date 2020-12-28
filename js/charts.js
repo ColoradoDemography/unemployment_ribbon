@@ -393,8 +393,19 @@ var curdata = join(indata[1], month_arr, "month", "month", function(dat,col){
 		};
 	}).filter(function(d) {return d.fips != null;})
 	  .sort(function(a, b){ return d3.ascending(+a['monthN'], +b['monthN']); });
+	  
+var prevdata = join(indata[2], month_arr, "month", "month", function(dat,col){
+		return{
+			fips : (col !== undefined) ? col.fips : null,
+			monthN : (dat !== undefined) ? +dat.monthN : null,
+			monthName : (dat !== undefined) ? dat.monthName : null,
+			ui : (col !== undefined) ? col.ui/100 : null,
+			year : (col !== undefined) ? col.year : null
+		};
+	}).filter(function(d) {return d.fips != null;})
+	  .sort(function(a, b){ return d3.ascending(+a['monthN'], +b['monthN']); });
 
-var outData = join(ribbondata, curdata, "monthN", "monthN", function(dat,col){
+var outData = join(ribbondata, prevdata, "monthN", "monthN", function(dat,col){
   return{
 			fips : (col !== undefined) ? col.fips : null,
 			monthN : (dat !== undefined) ? +dat.monthN : null,
@@ -402,15 +413,38 @@ var outData = join(ribbondata, curdata, "monthN", "monthN", function(dat,col){
 			beginning_year : (col !== undefined) ? col.min_yr : null,
 			ending_year : (col !== undefined) ? col.max_yr : null,
 			minimum_ui :  (col !== undefined) ? formatPercent(col.min_ui) : null,
-			mid_ui :  (col !== undefined) ? formatPercent(col.mid_ui) : null,
+			mid_point_ui :  (col !== undefined) ? formatPercent(col.mid_ui) : null,
 			maximum_ui :  (col !== undefined) ? formatPercent(col.max_ui) : null,
+			previous_year : (col !== undefined) ? dat.year : null,
+			previous_ui : (dat !== undefined) ? formatPercent(dat.ui) : null
+		};
+	}).filter(function(d) {return d.fips != null;})
+	  .sort(function(a, b){ return d3.ascending(+a['monthN'], +b['monthN']); });
+console.log(ribbondata);
+console.log(prevdata);
+console.log(outData);
+
+var outData2 = join(outData, curdata, "monthN", "monthN", function(dat,col){
+  return{
+			fips : (col !== undefined) ? col.fips : null,
+			monthN : (dat !== undefined) ? +dat.monthN : null,
+			monthName : (dat !== undefined) ? dat.monthName : null,
+			beginning_year : (col !== undefined) ? col.beginning_year : null,
+			ending_year : (col !== undefined) ? col.ending_year : null,
+			minimum_ui :  (col !== undefined) ? col.minimum_ui : null,
+			mid_point_ui :  (col !== undefined) ? col.mid_point_ui : null,
+			maximum_ui :  (col !== undefined) ? col.maximum_ui : null,
+			previous_year : (col !== undefined) ? col.previous_year : null,
+			previous_ui : (col !== undefined) ? col.previous_ui : null,
 			current_year : (col !== undefined) ? dat.year : null,
 			current_ui : (dat !== undefined) ? formatPercent(dat.ui) : null
 		};
 	}).filter(function(d) {return d.fips != null;})
 	  .sort(function(a, b){ return d3.ascending(+a['monthN'], +b['monthN']); });
 
-    exportToCsv(fileName,outData);
+console.log(outData2);
+
+    exportToCsv(fileName,outData2);
 }; //end of dataDownload
 
 
