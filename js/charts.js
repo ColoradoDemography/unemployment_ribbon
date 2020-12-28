@@ -56,6 +56,21 @@ return(capTxt);
 
 //DATA MANIPULATION FUNCTIONS
 
+//legendOut   appends the jobs table objects into the svg 
+function legendOut(curYr, begYr, endYr){
+
+var curtxt = "Unemployment Rate: " + curYr;
+var prevtxt = "Unemployment Rate: " + (curYr - 1);
+var midtxt = "Midpoint of Unemployment Rate, " + begYr + "-" + endYr;
+var rngtxt = "Range of Unemployment Rate, " + begYr + "-" + endYr;
+
+var outArr = [ {"color" : "red","text" : curtxt, "ypos" : 50},
+			{"color" : 'brown',"text" : prevtxt, "ypos" : 60},
+			{"color" : 'black', "text" : midtxt, "ypos" : 70},
+			{"color" : 'blue', "text" : rngtxt, "ypos" : 80} ];
+
+return outArr;
+}; //end of legendOut
 
 function switchFIPS(county){
    switch(county){
@@ -274,15 +289,21 @@ jData.forEach(function(cty) {
 });
 
 
-var maxYr = d3.max(flatdata, function(d) { return +d.year;} );
+var maxYr = d3.max(flatdata, function(d) { return +d.year;} );  //This is the maximum year, the currrent year
+var prevYr = maxYr - 1;  //This is the previous year, current year - 1
  
-var maxData = flatdata.filter(function(d) { 
+var maxData = flatdata.filter(function(d) { //This is the data series for the current year
         if((d.fips == FIPS) && (d.year == maxYr) && (d.month != "Ann")) { return d;} 
     });
 
+var prevData = flatdata.filter(function(d) { //This is the data series for the previous year
+        if((d.fips == FIPS) && (d.year == prevYr) && (d.month != "Ann")) { return d;} 
+    });
+
+
 if(TYPE == "5Yr") {
   var statData = flatdata.filter(function(d) { 
-        if((d.fips == FIPS) && (d.year >= (maxYr - 6)) && (d.year < maxYr) && (d.month != "Ann")) { return d;} 
+        if((d.fips == FIPS) && (d.year >= (prevYr - 6)) && (d.year < prevYr) && (d.month != "Ann")) { return d;} 
     });
 } else {
 	 var statData = flatdata.filter(function(d) { 
@@ -316,7 +337,7 @@ summaryArr.forEach(function(d) {
 	});
 });
 
-return([summaryFlat,maxData]);
+return([summaryFlat,maxData,prevData]);
 } //End buildData
 
 
@@ -348,7 +369,7 @@ var month_arr = [{"monthN" : 1, "month" : "Jan", "monthName" : "January"},
 
 //Join and Sort datafiles
 
-var ribbondata2 = join(indata[0], month_arr, "month", "month", function(dat,col){
+var ribbondata = join(indata[0], month_arr, "month", "month", function(dat,col){
 		return{
 			fips : col.fips,
 			monthN : +dat.monthN,
@@ -362,7 +383,7 @@ var ribbondata2 = join(indata[0], month_arr, "month", "month", function(dat,col)
 	}).sort(function(a, b){ return d3.ascending(+a['monthN'], +b['monthN']); });
 	
 
-var linedata2 = join(indata[1], month_arr, "month", "month", function(dat,col){
+var curdata = join(indata[1], month_arr, "month", "month", function(dat,col){
 		return{
 			fips : (col !== undefined) ? col.fips : null,
 			monthN : (dat !== undefined) ? +dat.monthN : null,
@@ -373,7 +394,7 @@ var linedata2 = join(indata[1], month_arr, "month", "month", function(dat,col){
 	}).filter(function(d) {return d.fips != null;})
 	  .sort(function(a, b){ return d3.ascending(+a['monthN'], +b['monthN']); });
 
-var outData = join(ribbondata2, linedata2, "monthN", "monthN", function(dat,col){
+var outData = join(ribbondata, curdata, "monthN", "monthN", function(dat,col){
   return{
 			fips : (col !== undefined) ? col.fips : null,
 			monthN : (dat !== undefined) ? +dat.monthN : null,
@@ -381,7 +402,7 @@ var outData = join(ribbondata2, linedata2, "monthN", "monthN", function(dat,col)
 			beginning_year : (col !== undefined) ? col.min_yr : null,
 			ending_year : (col !== undefined) ? col.max_yr : null,
 			minimum_ui :  (col !== undefined) ? formatPercent(col.min_ui) : null,
-			median_ui :  (col !== undefined) ? formatPercent(col.mid_ui) : null,
+			mid_ui :  (col !== undefined) ? formatPercent(col.mid_ui) : null,
 			maximum_ui :  (col !== undefined) ? formatPercent(col.max_ui) : null,
 			current_year : (col !== undefined) ? dat.year : null,
 			current_ui : (dat !== undefined) ? formatPercent(dat.ui) : null
@@ -427,7 +448,7 @@ saveSvgAsPng(svg_node, outFileName);
 //initialChart reads information from the dropdowns
 function initialChart(datain,CTY,TYPE) {  
 
-genChart(datain[0],datain[1],CTY,TYPE); //Generates the chart
+genChart(datain[0],datain[1],datain[2],CTY,TYPE); //Generates the chart
  
 }; // initialChart
 
@@ -438,12 +459,12 @@ function updateChart(datain,CTY,TYPE) {
 
 var graph = d3.select("svg").remove();
 
-genChart(datain[0],datain[1],CTY,TYPE); 
+genChart(datain[0],datain[1], datain[2],CTY,TYPE); 
  
 }; //updateChart
 
 //genChart produces the ribbon chart
-function genChart(ribbondata,linedata,CTY,YEAR){ 
+function genChart(ribbonData,curData,prevData,CTY,YEAR){ 
 
 //Preparing Month Array
 var month_arr = [{"monthN" : 1, "month" : "Jan", "monthName" : "January"},
@@ -461,7 +482,7 @@ var month_arr = [{"monthN" : 1, "month" : "Jan", "monthName" : "January"},
 
 //Join and Sort datafiles
 
-var ribbondata2 = join(ribbondata, month_arr, "month", "month", function(dat,col){
+var ribbondata = join(ribbonData, month_arr, "month", "month", function(dat,col){
 		return{
 			fips : col.fips,
 			monthN : +dat.monthN,
@@ -475,7 +496,7 @@ var ribbondata2 = join(ribbondata, month_arr, "month", "month", function(dat,col
 	}).sort(function(a, b){ return d3.ascending(+a['monthN'], +b['monthN']); });
 	
 
-var linedata2 = join(linedata, month_arr, "month", "month", function(dat,col){
+var curdata = join(curData, month_arr, "month", "month", function(dat,col){
 		return{
 			fips : (col !== undefined) ? col.fips : null,
 			monthN : (dat !== undefined) ? +dat.monthN : null,
@@ -486,6 +507,16 @@ var linedata2 = join(linedata, month_arr, "month", "month", function(dat,col){
 	}).filter(function(d) {return d.fips != null;})
 	  .sort(function(a, b){ return d3.ascending(+a['monthN'], +b['monthN']); });
 
+var prevdata = join(prevData, month_arr, "month", "month", function(dat,col){
+		return{
+			fips : (col !== undefined) ? col.fips : null,
+			monthN : (dat !== undefined) ? +dat.monthN : null,
+			monthName : (dat !== undefined) ? dat.monthName : null,
+			ui : (col !== undefined) ? col.ui/100 : null,
+			year : (col !== undefined) ? col.year : null
+		};
+	}).filter(function(d) {return d.fips != null;})
+	  .sort(function(a, b){ return d3.ascending(+a['monthN'], +b['monthN']); });
 //Percentage Format
 var formatPercent = d3.format(".1%")
 
@@ -499,8 +530,8 @@ var formatPercent = d3.format(".1%")
 	axisShift = 130;
 	
 	
-var maxCur = d3.max(linedata2, function(d){return d.ui});
-var maxRib = d3.max(ribbondata2, function(d) {return d.max_ui});
+var maxCur = d3.max(curdata, function(d){return d.ui});
+var maxRib = d3.max(ribbondata, function(d) {return d.max_ui});
 
 var maxVal = (maxCur > maxRib) ? maxCur : maxRib;
 var maxVal = maxVal + 0.02;
@@ -547,6 +578,10 @@ var CurLine = d3.line()
 	   .y(function(d) { return y_axis(d.ui)-250 });
 		
 
+var PrevLine = d3.line() 
+       .x(function(d) { return x_axis(d.monthName) })
+	   .y(function(d) { return y_axis(d.ui)-250 });
+		
 
 //Output code for chart 
 
@@ -558,6 +593,12 @@ var curtip = d3.tip()  //too;tip for current unemployment line
     return tipMsg;
  }); //This is the tip content
 
+var prevtip = d3.tip()  //too;tip for current unemployment line
+  .attr('class', 'd3-tip')  //This is the link to the CSS 
+  .html(function(e,d) { 
+    tipMsg = d.monthName + ", " + d.year + "<br> Unemployment Rate: " + formatPercent(d.ui);
+    return tipMsg;
+ }); //This is the tip content
 
 var mintip = d3.tip()  //too;tip for minimum unemployment value of ribbon
   .attr('class', 'd3-tip')  //This is the link to the CSS 
@@ -569,7 +610,7 @@ var mintip = d3.tip()  //too;tip for minimum unemployment value of ribbon
 var midtip = d3.tip()  //too;tip for middle unemployment value of ribbon
   .attr('class', 'd3-tip')  //This is the link to the CSS 
   .html(function(e,d) { 
-    tipMsg = d.monthName + ", " + d.min_yr + "-" + d.max_yr + "<br> Median Unemployment Rate: " + formatPercent(d.mid_ui);
+    tipMsg = d.monthName + ", " + d.min_yr + "-" + d.max_yr + "<br> Mid-point Unemployment Rate: " + formatPercent(d.mid_ui);
     return tipMsg;
  }); //This is the tip content
 
@@ -586,6 +627,7 @@ var maxtip = d3.tip()  //too;tip for maximum unemployment value of ribbon
 		 .attr("preserveAspectRatio", "xMinYMin meet")
          .attr("viewBox", [0, 0, width, height])
 		 .call(curtip)  //Add Tooltips to Visualuzation
+		 .call(prevtip)
          .call(mintip)
          .call(midtip)
          .call(maxtip);
@@ -604,7 +646,7 @@ graph.append("text")
 
    // Add the Ribbon
  graph.append("path")
-     .data([ribbondata2])
+     .data([ribbondata])
 	  .attr("class","ribbon")
       .style("fill", "#46F7F6")
       .style("stroke", "steelblue")
@@ -616,7 +658,7 @@ graph.append("text")
 
 // Add the  Midline
 graph.append("path")
-      .data([ribbondata2])
+      .data([ribbondata])
 	  .attr("class","midline")
       .style("stroke", "black")
 	  .style("fill","none")
@@ -627,7 +669,7 @@ graph.append("path")
 
 // Add the CurLine
 graph.append("path")
-      .datum(linedata2)
+      .datum(curdata)
 	  .attr("class","curline")
       .style("stroke", "red")
 	  .style("fill","none")
@@ -635,12 +677,21 @@ graph.append("path")
 	  .attr("transform", `translate(${margin.left + axisShift - 40},300)`)
       .attr("d", CurLine);
 	  
-	  
 
+// Add the PrevLine
+graph.append("path")
+      .datum(prevdata)
+	  .attr("class","prevline")
+      .style("stroke", "brown")
+	  .style("fill","none")
+      .style("stroke-width", 1.5)
+	  .attr("transform", `translate(${margin.left + axisShift - 40},300)`)
+      .attr("d", PrevLine);
+	  
 
 //Add the circles to the ribbon
 graph.selectAll("MaxCircles")
-      .data(ribbondata2)
+      .data(ribbondata)
       .enter()
       .append("circle")
         .attr("fill", "steelblue")
@@ -653,7 +704,7 @@ graph.selectAll("MaxCircles")
         .on('mouseout', maxtip.hide);
 				
 graph.selectAll("MinCircles")
-        .data(ribbondata2)
+        .data(ribbondata)
         .enter()
 		.append("circle")
         .attr("fill", "steelblue")
@@ -666,7 +717,7 @@ graph.selectAll("MinCircles")
         .on('mouseout', mintip.hide);;
 		
 graph.selectAll("MidCircles")
-         .data(ribbondata2)
+         .data(ribbondata)
          .enter()
 		 .append("circle")
         .attr("fill", "black")
@@ -681,7 +732,7 @@ graph.selectAll("MidCircles")
 
 
 graph.selectAll("CurCircles")
-         .data(linedata2)
+         .data(curdata)
          .enter()
 		 .append("circle")
         .attr("fill", "red")
@@ -692,6 +743,19 @@ graph.selectAll("CurCircles")
         .attr("r", 3)
 		.on('mouseover', function(e,d) { curtip.show(e,d); })  //the content of the tip is established in the initialization
         .on('mouseout', curtip.hide);
+
+graph.selectAll("PrevCircles")
+         .data(prevdata)
+         .enter()
+		 .append("circle")
+        .attr("fill", "brown")
+        .attr("stroke", "none")
+		.attr("transform", `translate(${margin.left + axisShift - 40},300)`)
+        .attr("cx", function(d) { return x_axis(d.monthName) })
+        .attr("cy", function(d) { return y_axis(d.ui)-250 })
+        .attr("r", 3)
+		.on('mouseover', function(e,d) { prevtip.show(e,d); })  //the content of the tip is established in the initialization
+        .on('mouseout', prevtip.hide);
 
 //X- axis
 graph.append("g")
@@ -707,8 +771,7 @@ graph.append("g")
 	  
 
 
-//caption  s
-
+//caption 
 var captionStr = captionTxt(yLen + 100);
 var caption =  graph.append("g")
 	     .attr("class","tabobj");
@@ -723,7 +786,40 @@ caption.selectAll("text")
         .attr("text-anchor", "right")  
         .style("font", "9px sans-serif");
 
+//legend
+//Gathering Year Values
 
+var curYear = d3.max(curdata, function(d) {return d.year});
+var begYear = d3.max(ribbondata, function(d) {return d.min_yr});
+var endYear = d3.max(ribbondata, function(d) {return d.max_yr});
+var tabArray = legendOut(curYear,begYear,endYear);
+
+var barHeight = 4;
+
+var rectanchorX = 600;
+
+var table =  graph.append("g")
+	     .attr("class","tabobj");
+		 
+table.selectAll("rect")
+    .data(tabArray)
+	.enter()
+	.append("rect")
+    .attr("x", function(d) {return rectanchorX;})
+	.attr("y", function(d) {return d.ypos;})
+    .attr("width",  barHeight)
+    .attr("height", barHeight)
+    .attr("fill", function(d) { return d.color;});
+
+table.selectAll("text")
+    .data(tabArray)
+	.enter()
+	.append("text")
+    .attr("x", function(d) {return rectanchorX + 10;})
+	.attr("y", function(d) {return d.ypos + 6;})
+    .text( function(d) { return d.text;})
+	.style("font", "9px sans-serif");
+	
 return graph.node();
  
 };  //end of genChart
