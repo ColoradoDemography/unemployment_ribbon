@@ -57,17 +57,17 @@ return(capTxt);
 //DATA MANIPULATION FUNCTIONS
 
 //legendOut   appends the jobs table objects into the svg 
-function legendOut(curYr, begYr, endYr){
+function legendOut(curYr, begYr, endYr,posY){
 
 var curtxt = "Unemployment Rate: " + curYr;
 var prevtxt = "Unemployment Rate: " + (curYr - 1);
 var midtxt = "Midpoint of Unemployment Rate, " + begYr + "-" + endYr;
 var rngtxt = "Range of Unemployment Rate, " + begYr + "-" + endYr;
 
-var outArr = [ {"color" : "red","text" : curtxt, "ypos" : 50},
-			{"color" : 'brown',"text" : prevtxt, "ypos" : 60},
-			{"color" : 'black', "text" : midtxt, "ypos" : 70},
-			{"color" : 'blue', "text" : rngtxt, "ypos" : 80} ];
+var outArr = [ {"color" : "red","text" : curtxt, "ypos" : posY},
+			{"color" : 'brown',"text" : prevtxt, "ypos" : posY + 10},
+			{"color" : 'black', "text" : midtxt, "ypos" : posY + 20},
+			{"color" : 'blue', "text" : rngtxt, "ypos" : posY + 30} ];
 
 return outArr;
 }; //end of legendOut
@@ -826,11 +826,11 @@ caption.selectAll("text")
 var curYear = d3.max(curdata, function(d) {return d.year});
 var begYear = d3.max(ribbondata, function(d) {return d.min_yr});
 var endYear = d3.max(ribbondata, function(d) {return d.max_yr});
-var tabArray = legendOut(curYear,begYear,endYear);
+var tabArray = legendOut(curYear,begYear,endYear,margin.top + 10);
 
 var barHeight = 4;
 
-var rectanchorX = 600;
+var rectanchorX = 650;
 
 var table =  graph.append("g")
 	     .attr("class","tabobj");
