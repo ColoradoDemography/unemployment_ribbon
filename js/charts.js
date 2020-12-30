@@ -644,7 +644,7 @@ var mintip = d3.tip()  //too;tip for minimum unemployment value of ribbon
 var midtip = d3.tip()  //too;tip for middle unemployment value of ribbon
   .attr('class', 'd3-tip')  //This is the link to the CSS 
   .html(function(e,d) { 
-    tipMsg = d.monthName + ", " + d.min_yr + "-" + d.max_yr + "<br> Mid-point Unemployment Rate: " + formatPercent(d.mid_ui);
+    tipMsg = d.monthName + ", " + d.min_yr + "-" + d.max_yr + "<br> Midpoint Unemployment Rate: " + formatPercent(d.mid_ui);
     return tipMsg;
  }); //This is the tip content
 
