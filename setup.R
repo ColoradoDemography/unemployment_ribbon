@@ -127,8 +127,13 @@ genBLSData <- function(fips, type){
 # Creating Year Values
   curYR <- as.integer(format(Sys.Date(), "%Y"))
   curMO <- as.integer(format(Sys.Date(), "%m"))
-  if (curMO <= 2) {
-    endYR <- curYR - 1
+  curDay <- as.integer(format(Sys.Date(),"%d"))
+  if (curMO <= 3) {
+    if(curDay <= 20){
+      endYR <- curYR - 1
+    } else {
+      endYR <- curYR
+    }
   } else{
     endYR <- curYR
   }
