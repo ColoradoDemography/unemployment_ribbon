@@ -141,7 +141,7 @@ genBLSData <- function(fips, type){
   endRYR <- endYR - 2
   startRYR <- endYR - 7
   
-  if(type == "Prior Unemployment Peak (2009-2012)") {
+  if(type == "Prior Unemployment Peak (2009 to 2012)") {
     endRYR <- 2012
     startRYR <- 2009
   }
