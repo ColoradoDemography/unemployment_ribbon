@@ -1,161 +1,63 @@
 <!DOCTYPE html>
-<! -- SDO Unemployment Rate Analysis A. Bickford 10/2020 -->
-<! -- Program provides a robbon chart comparing the current year's unemployment rate to a selected ribbon-->
-<! -- reads unemployment rate data from BLS JSON -->
-<! -- Uses d3-tip API -->
-<! -- outputs County level robbon chart  --> 
+<!-- template.html -->
 <head>
-<title>Unemployment Rate Analysis</title>
-</head>
+<title>SDO Unemployment Analysis</title>
 <style>
-.d3-tip {
-    line-height: 1;
-	font-size : 10pt;
-    padding: 12px;
-    background: rgba(0, 0, 0, 0.8);
-    color: #fff;
-    border-radius: 2px;
-  }
- </style>
-<body>
-<h2>SDO Unemployment Rate Analysis</h2>
-<p></p>
 
-<div class = "entry">
-<form id="infoForm" onsubmit="return false">
-  <select id="selCty">
-    <option value="000">Colorado</option>
-  </select>
-  <select id="selType">
-    <option value="5Yr">Past Five Years</option>
-	<option value="Recession">2009-2012 Great Recession
-  </select>
-  <button id="btnSave">Download Chart</button>
-  <button id="btnData">Download Data</button>
- </form>
-<hr>
-</div>
+   .p1 {
+   font-family: Arial, Helvetica, sans-serif;
+   font-size: 10pt;
+   }
+   .t1{
+   font-family: Arial, Helvetica, sans-serif;
+   font-size: 10pt;
+   }
+</style>
+</head>
+  <body>
 
-<div id= "chart"></div>
+                <section id="content" role="main">
+                    <div id="main-content">
+                      <h1 style="font-family: Arial, Helvetica, sans-serif">State Demography Office - Unemployment Rate Analysis</h1>
+                      <p class="p1">This application shows the three periods of unemployment rate data by month for a selected county for three time periods: </p>
+					   <ul class="p1">
+					   <li>The Current Year,</li>
+					   <li>The Previous Year, and </li>
+					   <li>A summary ribbon showing the range in the unemployment rate for either</li>
+					   <ul>
+					   <li> The past five years, or</li>
+					   <li> The period of the great recession (2009 to 2013)
+					   </ul>
+					   </ul>
+					   <hr>
+					  <table class="t1">
+					  <tr>
+					  <td> {{ county }}</td>
+					  <td> {{ type }}  </td>
+					  <td> {{ goBtn }} </td>
+					  </tr>
+					  </table>
+                      <hr>
+                        <br>
+                      {{ line_chart }}
+					  <br>
+					  {{ dlBtn }}
+                      </div>
+                </section>
+            </div>
+        </div>
 
+        <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
 
+  ga('create', 'UA-76100845-1', 'auto');
+  ga('set', 'anonymizeIp', true);
+  ga('send', 'pageview');
 
-<script src="https://d3js.org/d3.v6.min.js"></script>  <!-- Main D3 Library -->
-<script src="https://unpkg.com/d3-v6-tip@1.0.6/build/d3-v6-tip.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/bumbeishvili/d3-tip-for-v6@4/d3-tip.min.css">
-
-<script type="text/javascript" src="js/saveSvgAsPng.js"></script>  <!-- Chart Output Library -->
-
-
-<!-- chart Functions: InitialChart, updateCountDhart, updatePCTChart, updateDiffChart, genCountChart, genPCTChart -->
-<script type="text/javascript" src="js/charts.js"></script>
-<script>
-
-
-
-//MAIN PROGRAM
-const tip = d3.tip();
-
- //Populate dropdowns
-
-//Counties
-
-var counties = [{'county': '', 'fips': ''},{'county':'Adams County', 'fips': '001'},
-                {'county':'Alamosa County', 'fips': '003'},{'county':'Arapahoe County', 'fips': '005'},
-				{'county':'Archuleta County', 'fips': '007'},{'county':'Baca County', 'fips': '009'},
-				{'county':'Bent County', 'fips': '011'},{'county':'Boulder County', 'fips': '013'},
-				{'county':'Broomfield County', 'fips': '014'},{'county':'Chaffee County', 'fips': '015'},
-				{'county':'Cheyenne County', 'fips': '017'},{'county':'Clear Creek County', 'fips': '019'},
-				{'county':'Conejos County', 'fips': '021'},{'county':'Costilla County', 'fips': '023'},
-				{'county':'Crowley County', 'fips': '025'},{'county':'Custer County', 'fips': '027'},
-				{'county':'Delta County', 'fips': '029'},{'county':'Denver County', 'fips': '031'},
-				{'county':'Dolores County', 'fips': '033'},{'county':'Douglas County', 'fips': '035'},
-				{'county':'Eagle County', 'fips': '037'},{'county':'Elbert County', 'fips': '039'},
-				{'county':'El Paso County', 'fips': '041'},{'county':'Fremont County', 'fips': '043'},
-				{'county':'Garfield County', 'fips': '045'},{'county':'Gilpin County', 'fips': '047'},
-				{'county':'Grand County', 'fips': '049'},{'county':'Gunnison County', 'fips': '051'},
-				{'county':'Hinsdale County', 'fips': '053'},{'county':'Huerfano County', 'fips': '055'},
-				{'county':'Jackson County', 'fips': '057'},{'county':'Jefferson County', 'fips': '059'},
-				{'county':'Kiowa County', 'fips': '061'},{'county':'Kit Carson County', 'fips': '063'},
-				{'county':'Lake County', 'fips': '065'},{'county':'La Plata County', 'fips': '067'},
-				{'county':'Larimer County', 'fips': '069'},{'county':'Las Animas County', 'fips': '071'},
-				{'county':'Lincoln County', 'fips': '073'},{'county':'Logan County', 'fips': '075'},
-				{'county':'Mesa County', 'fips': '077'},{'county':'Mineral County', 'fips': '079'},
-				{'county':'Moffat County', 'fips': '081'},{'county':'Montezuma County', 'fips': '083'},
-				{'county':'Montrose County', 'fips': '085'},{'county':'Morgan County', 'fips': '087'},
-				{'county':'Otero County', 'fips': '089'},{'county':'Ouray County', 'fips': '091'},
-				{'county':'Park County', 'fips': '093'},{'county':'Phillips County', 'fips': '095'},
-				{'county':'Pitkin County', 'fips': '097'},{'county':'Prowers County', 'fips': '099'},
-				{'county':'Pueblo County', 'fips': '101'},{'county':'Rio Blanco County', 'fips': '103'},
-				{'county':'Rio Grande County', 'fips': '105'},{'county':'Routt County', 'fips': '107'},
-				{'county':'Saguache County', 'fips': '109'},{'county':'San Juan County', 'fips': '111'},
-				{'county':'San Miguel County', 'fips': '113'},{'county':'Sedgwick County', 'fips': '115'},
-				{'county':'Summit County', 'fips': '117'},{'county':'Teller County', 'fips': '119'},
-				{'county':'Washington County', 'fips': '121'},{'county':'Weld County', 'fips': '123'},
-				{'county':'Yuma County', 'fips': '125'}];
-
- d3.select("#selCty")
-    .selectAll('option')
-    .data(counties)
-    .enter()
-    .append('option')
-    .attr('value', d => d.fips) 
-    .text(d => d.county);
-
-//Read the dataset here...
-
-d3.json("https://storage.googleapis.com/bls-data/08_bls.json").then(function(indata) {  //Main JSON
-
- var seldCTY = d3.select('#selCty option:checked').text();
- var seldFIPS = switchFIPS(seldCTY);
-//var seldFIPS = d3.select("#selCty").property('value');
- var seldTYPE = d3.select("#selType").property('value');
- var outData = buildData(indata, seldFIPS, seldTYPE);
-//The inital chart
- initialChart(outData,seldCTY,seldTYPE);
-
-//The onchange events:  Change of County
-d3.select("#selCty").on("change", function(d,i) {
-
-var seldCTY = d3.select('#selCty option:checked').text();
- var seldFIPS = switchFIPS(seldCTY);
-//var seldFIPS = d3.select("#selCty").property('value');
- var seldTYPE = d3.select("#selType").property('value');
-    var outData = buildData(indata, seldFIPS, seldTYPE);
-         updateChart(outData,seldCTY,seldTYPE);
-	});
-
-//Change of Type
-d3.select("#selType").on("change", function(d,i) {
-var seldCTY = d3.select('#selCty option:checked').text();
- var seldFIPS = switchFIPS(seldCTY);
-//var seldFIPS = d3.select("#selCty").property('value');
- var seldTYPE = d3.select("#selType").property('value');
-    var outData = buildData(indata, seldFIPS, seldTYPE);
-        updateChart(outData,seldCTY,seldTYPE);
-	});
- 
-//Button click events...
-
-d3.select("#btnData").on("click", function(event) {
-          event.preventDefault();
-          dataDownload(outData);
- });  //Data Download
- 
- d3.select("#btnSave").on("click", function(event) {
-
-  event.preventDefault();
-  	
-	var seldCTY = d3.select('#selCty option:checked').text();
-	var fileNamePNG = "Unemp;loyment Rate Comparison "+seldCTY +  ".png";
-
-	imageDownload(fileNamePNG);
- });  //btnSave
-
- }).catch(function(error){
-		 console.log("Process Error");
- });  //Read main JSON
- 
- </script>
+</script>
 
 </body>
+</html>
