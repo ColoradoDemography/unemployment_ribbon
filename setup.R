@@ -72,7 +72,7 @@ typSelect <- function() {
    startYR <- endYR - 7
    
    str5 <- paste0("Past Five Years (", startYR," to ",endYR - 2,")")
-   strGR <- "Great Recession (2007 to 2009)"
+   strGR <- "Prior Unemployment Peak (2009 to 2012)"
    
    outList <- c(str5, strGR)
    
@@ -141,9 +141,9 @@ genBLSData <- function(fips, type){
   endRYR <- endYR - 2
   startRYR <- endYR - 7
   
-  if(type == "Great Recession (2007 to 2009)") {
-    endRYR <- 2009
-    startRYR <- 2007
+  if(type == "Prior Unemployment Peak (2009-2012)") {
+    endRYR <- 2012
+    startRYR <- 2009
   }
   yrList <- c(endYR, prevYR,  startRYR, endRYR)
   
