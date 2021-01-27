@@ -239,7 +239,7 @@ f.chartData$curText <- paste0("Unemployment Rate: ",percent(f.chartData$curUI*10
                                "Difference: ",NumFmt(f.chartData$diff))
 
 # Chart Title
-total_tit <- paste0("Unemployment Rate ",ctyname,".png")
+total_tit <- paste0("Unemployment Rate ",ctyname)
 fig <- plot_ly(f.chartData, x = ~periodName, y = ~maxUI, type = 'scatter', mode = 'lines+markers',
                line = list(color = 'rgba(0,0,255,1)'),
                name = rngSTR, text = ~maxText, hoverinfo = 'text') %>% 
