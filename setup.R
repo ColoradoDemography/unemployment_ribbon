@@ -238,10 +238,13 @@ f.chartData$curText <- paste0("Unemployment Rate: ",percent(f.chartData$curUI*10
                                "Number Employed ",f.chartData$periodName, ", ",f.outdata$years[2],": ",NumFmt(f.chartData$prevYR), "<br>",
                                "Difference: ",NumFmt(f.chartData$diff))
 
-
+# Chart Title
+total_tit <- paste0("Unemployment Rate ",ctyname,".png")
 fig <- plot_ly(f.chartData, x = ~periodName, y = ~maxUI, type = 'scatter', mode = 'lines+markers',
                line = list(color = 'rgba(0,0,255,1)'),
-               name = rngSTR, text = ~maxText, hoverinfo = 'text')
+               name = rngSTR, text = ~maxText, hoverinfo = 'text') %>% 
+              config( toImageButtonOptions = list(format = "png", filename = total_tit,
+                                                  width = 1450, height = 500))
 fig <- fig %>% add_trace(y = ~minUI, type = 'scatter', mode = 'lines+markers',
                          fill = 'tonexty', fillcolor='rgba(173,216,230,0.4)', line = list(color = 'rgba(0,0,255,1)'),
                          marker = list(color = 'rgba(0,0,255,1)'),
