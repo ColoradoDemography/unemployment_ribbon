@@ -62,39 +62,39 @@ simpleCap <- function(x) {
 
 #YrSelect  Generates the selections for the type dropdown
 typSelect <- function() {
-   curYR <- as.integer(format(Sys.Date(), "%Y"))
-   curMO <- as.integer(format(Sys.Date(), "%m"))
-   if (curMO <= 2) {
-     endYR <- curYR - 1
-   } else{
-     endYR <- curYR
-   }
-   startYR <- endYR - 7
-   
-   str5 <- paste0("Past Five Years (", startYR," to ",endYR - 2,")")
-   strGR <- "Prior Unemployment Peak (2009 to 2012)"
-   
-   outList <- c(str5, strGR)
-   
-return(outList)   
+  curYR <- as.integer(format(Sys.Date(), "%Y"))
+  curMO <- as.integer(format(Sys.Date(), "%m"))
+  if (curMO <= 2) {
+    endYR <- curYR - 1
+  } else{
+    endYR <- curYR
+  }
+  startYR <- endYR - 7
+  
+  str5 <- paste0("Past Five Years (", startYR," to ",endYR - 2,")")
+  strGR <- "Prior Unemployment Peak (2009 to 2012)"
+  
+  outList <- c(str5, strGR)
+  
+  return(outList)   
 }
-    
+
 # popPlace list of county names
 popPlace <- function(DBPool) {
- 
-
+  
+  
   # Create Connection Strings
   clookupStr <- paste0("SELECT DISTINCT countyfips, municipalityname FROM estimates.county_muni_timeseries WHERE placefips = 0;")
-
-    # f.cLookup contains the county records
-    f.cLookup <- dbGetQuery(DBPool, clookupStr)
-    
- # Counties   
-    f.cLookup <- arrange(f.cLookup, countyfips)
-    f.cLookup[,2] <- sapply(f.cLookup[,2], function(x) simpleCap(x))
-    f.cLookup$municipalityname <- str_replace(f.cLookup$municipalityname,"Colorado State","Colorado")
-    
-   
+  
+  # f.cLookup contains the county records
+  f.cLookup <- dbGetQuery(DBPool, clookupStr)
+  
+  # Counties   
+  f.cLookup <- arrange(f.cLookup, countyfips)
+  f.cLookup[,2] <- sapply(f.cLookup[,2], function(x) simpleCap(x))
+  f.cLookup$municipalityname <- str_replace(f.cLookup$municipalityname,"Colorado State","Colorado")
+  
+  
   return(f.cLookup)
 }
 
@@ -114,25 +114,25 @@ substrRight <- function(x, n){
 
 # genBLSData  returns the analysis dataset, through the BLS API...
 genBLSData <- function(fips, type){
-
+  
   # Creating SeriesID List
   if(fips == 0) {
-       seriesID <-  c("LAUST080000000000003", "LAUCA082160000000005")
+    seriesID <-  c("LAUST080000000000003", "LAUCA082160000000005")
   } else {
     ui <- paste0("LAUCN08",str_pad(fips,3,pad="0"),  "0000000003")
     nemp <- paste0("LAUCN08",str_pad(fips,3,pad="0"),  "0000000005")
     seriesID = c(ui,  nemp)
   }
-
-# Creating Year Values
+  
+  # Creating Year Values
   curYR <- as.integer(format(Sys.Date(), "%Y"))
   curMO <- as.integer(format(Sys.Date(), "%m"))
   curDay <- as.integer(format(Sys.Date(),"%d"))
   if (curMO <= 3){
-      endYR <- curYR - 1
-    } else {
-      endYR <- curYR
-    }
+    endYR <- curYR - 1
+  } else {
+    endYR <- curYR
+  }
   
   prevYR <- endYR - 1
   endRYR <- endYR - 2
@@ -193,123 +193,123 @@ genBLSData <- function(fips, type){
   
   f.allData <- inner_join(f.ribbonData, f.prevData, by="periodName") %>%
     full_join(., f.curData, by= "periodName")
- 
+  
   
   # Assembling output data object
   outList <- list("data" = f.allData,"years" = yrList)
   
-return(outList)
+  return(outList)
 }
 
 # GenPlot returns the Plots
 GenPlot <- function(ctyfips, ctyname, dattype) {
-
-ctysel <- listTofips(ctyfips,ctyname)
-f.outdata <- genBLSData(fips = ctysel,type = dattype)
-
-f.chartData <- as.data.frame(f.outdata$data)
-
-titleSTR <- paste0("Unemployment Rate: ",ctyname)
-
-f.chartData$periodName <- factor(f.chartData$periodName, 
-                                 levels = c("January", "February", "March","April", "May", "June",
-                                            "July", "August", "September", "October", "November", "December"))
-f.chartDataout <- f.chartData %>%
+  
+  ctysel <- listTofips(ctyfips,ctyname)
+  f.outdata <- genBLSData(fips = ctysel,type = dattype)
+  
+  f.chartData <- as.data.frame(f.outdata$data)
+  
+  titleSTR <- paste0("Unemployment Rate: ",ctyname)
+  
+  f.chartData$periodName <- factor(f.chartData$periodName, 
+                                   levels = c("January", "February", "March","April", "May", "June",
+                                              "July", "August", "September", "October", "November", "December"))
+  f.chartDataout <- f.chartData %>%
     select(periodName:diff)
-
-
-
-# legend entries and caption
-curSTR <- paste0("Unemployment Rate: ", f.outdata$years[1])
-prevSTR  <- paste0("Unemployment Rate: ", f.outdata$years[2])
-midSTR <- paste0("Midpoint of Unemployment Rate, ",f.outdata$years[3], "-", f.outdata$years[4])
-rngSTR <- paste0("Range of Unemployment Rate, ",f.outdata$years[3], "-", f.outdata$years[4])
-
-captionSTR <- paste0("Data: Bureau of Labor Statistics API - Data not Seasonally Adjusted.<br>BLS.gov cannot vouch for the data or analyses derived from these data<br>after the data have been retrieved from BLS.gov.",
-                     "<br>Visualization by the State Demography Office, Print Date: ", format(Sys.Date(), "%m/%d/%Y"))
-
-# tool tip text
-f.chartData$maxText <- paste0("Maximum Unemployment Rate: ",percent(f.chartData$maxUI*100), "<br>", f.chartData$periodName, ", ",f.outdata$years[3], "-", f.outdata$years[4])
-f.chartData$minText <- paste0("Minimum Unemployment Rate: ",percent(f.chartData$minUI*100), "<br>",  f.chartData$periodName, ", ",f.outdata$years[3], "-", f.outdata$years[4])
-f.chartData$midText <- paste0("Midpoint of Unemployment Rate: ",percent(f.chartData$midUI*100),"<br>", f.chartData$periodName, ", ",f.outdata$years[3], "-", f.outdata$years[4])
-f.chartData$prevText <- paste0("Unemployment Rate: ",percent(f.chartData$prevUI*100), "<br>", f.chartData$periodName, ", ",f.outdata$years[2])
-if(f.chartData$ curYr > 0) {
-f.chartData$curText <- paste0("Unemployment Rate: ",percent(f.chartData$curUI*100), "<br>", f.chartData$periodName, ", ",f.outdata$years[1], "<br>",
-                               "Number Employed ",f.chartData$periodName, ", ",f.outdata$years[1],": ",NumFmt(f.chartData$curYR), "<br>",
-                               "Number Employed ",f.chartData$periodName, ", ",f.outdata$years[2],": ",NumFmt(f.chartData$prevYR), "<br>",
-                               "Difference: ",NumFmt(f.chartData$diff))
-} else {
-  f.chartData$curText <- paste0("Unemployment Rate: ",percent(f.chartData$curUI*100), "<br>", f.chartData$periodName, ", ",f.outdata$years[1])
+  
+  
+  
+  # legend entries and caption
+  curSTR <- paste0("Unemployment Rate: ", f.outdata$years[1])
+  prevSTR  <- paste0("Unemployment Rate: ", f.outdata$years[2])
+  midSTR <- paste0("Midpoint of Unemployment Rate, ",f.outdata$years[3], "-", f.outdata$years[4])
+  rngSTR <- paste0("Range of Unemployment Rate, ",f.outdata$years[3], "-", f.outdata$years[4])
+  
+  captionSTR <- paste0("Data: Bureau of Labor Statistics API - Data not Seasonally Adjusted.<br>BLS.gov cannot vouch for the data or analyses derived from these data<br>after the data have been retrieved from BLS.gov.",
+                       "<br>Visualization by the State Demography Office, Print Date: ", format(Sys.Date(), "%m/%d/%Y"))
+  
+  # tool tip text
+  f.chartData$maxText <- paste0("Maximum Unemployment Rate: ",percent(f.chartData$maxUI*100), "<br>", f.chartData$periodName, ", ",f.outdata$years[3], "-", f.outdata$years[4])
+  f.chartData$minText <- paste0("Minimum Unemployment Rate: ",percent(f.chartData$minUI*100), "<br>",  f.chartData$periodName, ", ",f.outdata$years[3], "-", f.outdata$years[4])
+  f.chartData$midText <- paste0("Midpoint of Unemployment Rate: ",percent(f.chartData$midUI*100),"<br>", f.chartData$periodName, ", ",f.outdata$years[3], "-", f.outdata$years[4])
+  f.chartData$prevText <- paste0("Unemployment Rate: ",percent(f.chartData$prevUI*100), "<br>", f.chartData$periodName, ", ",f.outdata$years[2])
+  if(f.chartData$curYR > 0) {
+    f.chartData$curText <- paste0("Unemployment Rate: ",percent(f.chartData$curUI*100), "<br>", f.chartData$periodName, ", ",f.outdata$years[1], "<br>",
+                                  "Number Employed ",f.chartData$periodName, ", ",f.outdata$years[1],": ",NumFmt(f.chartData$curYR), "<br>",
+                                  "Number Employed ",f.chartData$periodName, ", ",f.outdata$years[2],": ",NumFmt(f.chartData$prevYR), "<br>",
+                                  "Difference: ",NumFmt(f.chartData$diff))
+  } else {
+    f.chartData$curText <- paste0("Unemployment Rate: ",percent(f.chartData$curUI*100), "<br>", f.chartData$periodName, ", ",f.outdata$years[1])
   }
-# Chart Title
-total_tit <- paste0("Unemployment Rate ",ctyname)
-fig <- plot_ly(f.chartData, x = ~periodName, y = ~maxUI, type = 'scatter', mode = 'lines+markers',
-               line = list(color = 'rgba(0,0,255,1)'),
-               name = rngSTR, text = ~maxText, hoverinfo = 'text') %>% 
-              config( toImageButtonOptions = list(format = "png", filename = total_tit,
-                                                  width = 1450, height = 500))
-fig <- fig %>% add_trace(y = ~minUI, type = 'scatter', mode = 'lines+markers',
-                         fill = 'tonexty', fillcolor='rgba(173,216,230,0.4)', line = list(color = 'rgba(0,0,255,1)'),
-                         marker = list(color = 'rgba(0,0,255,1)'),
-                         showlegend = FALSE, name = rngSTR, text = ~minText, hoverinfo = 'text')
-fig <- fig %>% add_trace(y = ~midUI, type = 'scatter', mode = 'lines+markers',
-                         line = list(color = 'rgba(0,0,0,1)'),
-                         marker = list(color = 'rgba(0,0,0,1)'),
-                         name = midSTR, text = ~midText, hoverinfo = 'text')
-fig <- fig %>% add_trace(y=~prevUI, type = 'scatter', mode = 'lines+markers',
-                         line = list(color = 'rgba(165,42,42,1)'),
-                         marker = list(color = 'rgba(165,42,42,1)'),
-                         name = prevSTR, text = ~prevText, hoverinfo = 'text')
-fig <- fig %>% add_trace(y=~curUI, type = 'scatter', mode = 'lines+markers',
-                         line = list(color = 'rgba(255,0,0,1)'),
-                         marker = list(color = 'rgba(255,0,0,1)'),
-                         name = curSTR, text = ~curText, hoverinfo = 'text')
-
-fig <- fig %>% layout(autosize = T,
-                      title = titleSTR,
-                      paper_bgcolor='rgb(255,255,255)', plot_bgcolor='rgb(229,229,229)',
-                      hoverlabel = "right",
-                      xaxis = list(title = "Months",
-                                   gridcolor = 'rgb(255,255,255)',
-                                   showgrid = TRUE,
-                                   showline = FALSE,
-                                   showticklabels = TRUE,
-                                   tickcolor = 'rgb(127,127,127)',
-                                   ticks = 'outside',
-                                   zeroline = FALSE),
-                      yaxis = list(title = "Unemployment Rate",
-                                   gridcolor = 'rgb(255,255,255)',
-                                   showgrid = TRUE,
-                                   showline = FALSE,
-                                   showticklabels = TRUE,
-                                   tickformat = "%",
-                                   tickcolor = 'rgb(127,127,127)',
-                                   ticks = 'outside',
-                                   zeroline = FALSE),
-                      annotations = list(text=captionSTR, xref = 'paper', x = 1.3,
-                                         yref = 'paper', y = 0.05,
-                                         align='left', showarrow=FALSE,
-                                         font=list(size=10)))
-
-#Final Formatting of  f.chartDataOUt
-
-f.chartDataout[,2:6] <- sapply(f.chartDataout[,2:6],function(x) percent(x* 100))
-f.chartDataout[,2:6] <- sapply(f.chartDataout[,2:6],function(x) sub("NA%","",x))
-f.chartDataout[,7:9] <- sapply(f.chartDataout[,7:9],function(x) NumFmt(x))
-f.chartDataout[,7:9] <- sapply(f.chartDataout[,7:9],function(x) sub("NA","",x))
-
- 
-
-
-minSTR <- paste0("Minimum Unemployment Rate, ",f.outdata$years[3], "-", f.outdata$years[4])
-maxSTR <- paste0("Maximum Unrmployment Rate: ",f.outdata$years[3], "-", f.outdata$years[4])
-prevEMPSTR <- paste0("Number Employed ",f.outdata$years[2])
-curEMPSTR <- paste0("Number Employed ",f.outdata$years[1])
-
-names(f.chartDataout) <- c("Month", minSTR,maxSTR,midSTR,prevSTR,curSTR,prevEMPSTR,curEMPSTR,"Difference")
-
-outlist <- list("LINE" = fig, "CHDATA" = f.chartDataout)
-return(outlist)
+  # Chart Title
+  total_tit <- paste0("Unemployment Rate ",ctyname)
+  fig <- plot_ly(f.chartData, x = ~periodName, y = ~maxUI, type = 'scatter', mode = 'lines+markers',
+                 line = list(color = 'rgba(0,0,255,1)'),
+                 name = rngSTR, text = ~maxText, hoverinfo = 'text') %>% 
+    config( toImageButtonOptions = list(format = "png", filename = total_tit,
+                                        width = 1450, height = 500))
+  fig <- fig %>% add_trace(y = ~minUI, type = 'scatter', mode = 'lines+markers',
+                           fill = 'tonexty', fillcolor='rgba(173,216,230,0.4)', line = list(color = 'rgba(0,0,255,1)'),
+                           marker = list(color = 'rgba(0,0,255,1)'),
+                           showlegend = FALSE, name = rngSTR, text = ~minText, hoverinfo = 'text')
+  fig <- fig %>% add_trace(y = ~midUI, type = 'scatter', mode = 'lines+markers',
+                           line = list(color = 'rgba(0,0,0,1)'),
+                           marker = list(color = 'rgba(0,0,0,1)'),
+                           name = midSTR, text = ~midText, hoverinfo = 'text')
+  fig <- fig %>% add_trace(y=~prevUI, type = 'scatter', mode = 'lines+markers',
+                           line = list(color = 'rgba(165,42,42,1)'),
+                           marker = list(color = 'rgba(165,42,42,1)'),
+                           name = prevSTR, text = ~prevText, hoverinfo = 'text')
+  fig <- fig %>% add_trace(y=~curUI, type = 'scatter', mode = 'lines+markers',
+                           line = list(color = 'rgba(255,0,0,1)'),
+                           marker = list(color = 'rgba(255,0,0,1)'),
+                           name = curSTR, text = ~curText, hoverinfo = 'text')
+  
+  fig <- fig %>% layout(autosize = T,
+                        title = titleSTR,
+                        paper_bgcolor='rgb(255,255,255)', plot_bgcolor='rgb(229,229,229)',
+                        hoverlabel = "right",
+                        xaxis = list(title = "Months",
+                                     gridcolor = 'rgb(255,255,255)',
+                                     showgrid = TRUE,
+                                     showline = FALSE,
+                                     showticklabels = TRUE,
+                                     tickcolor = 'rgb(127,127,127)',
+                                     ticks = 'outside',
+                                     zeroline = FALSE),
+                        yaxis = list(title = "Unemployment Rate",
+                                     gridcolor = 'rgb(255,255,255)',
+                                     showgrid = TRUE,
+                                     showline = FALSE,
+                                     showticklabels = TRUE,
+                                     tickformat = "%",
+                                     tickcolor = 'rgb(127,127,127)',
+                                     ticks = 'outside',
+                                     zeroline = FALSE),
+                        annotations = list(text=captionSTR, xref = 'paper', x = 1.3,
+                                           yref = 'paper', y = 0.05,
+                                           align='left', showarrow=FALSE,
+                                           font=list(size=10)))
+  
+  #Final Formatting of  f.chartDataOUt
+  
+  f.chartDataout[,2:6] <- sapply(f.chartDataout[,2:6],function(x) percent(x* 100))
+  f.chartDataout[,2:6] <- sapply(f.chartDataout[,2:6],function(x) sub("NA%","",x))
+  f.chartDataout[,7:9] <- sapply(f.chartDataout[,7:9],function(x) NumFmt(x))
+  f.chartDataout[,7:9] <- sapply(f.chartDataout[,7:9],function(x) sub("NA","",x))
+  
+  
+  
+  
+  minSTR <- paste0("Minimum Unemployment Rate, ",f.outdata$years[3], "-", f.outdata$years[4])
+  maxSTR <- paste0("Maximum Unrmployment Rate: ",f.outdata$years[3], "-", f.outdata$years[4])
+  prevEMPSTR <- paste0("Number Employed ",f.outdata$years[2])
+  curEMPSTR <- paste0("Number Employed ",f.outdata$years[1])
+  
+  names(f.chartDataout) <- c("Month", minSTR,maxSTR,midSTR,prevSTR,curSTR,prevEMPSTR,curEMPSTR,"Difference")
+  
+  outlist <- list("LINE" = fig, "CHDATA" = f.chartDataout)
+  return(outlist)
 }
 
 
