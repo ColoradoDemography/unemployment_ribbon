@@ -233,11 +233,14 @@ f.chartData$maxText <- paste0("Maximum Unemployment Rate: ",percent(f.chartData$
 f.chartData$minText <- paste0("Minimum Unemployment Rate: ",percent(f.chartData$minUI*100), "<br>",  f.chartData$periodName, ", ",f.outdata$years[3], "-", f.outdata$years[4])
 f.chartData$midText <- paste0("Midpoint of Unemployment Rate: ",percent(f.chartData$midUI*100),"<br>", f.chartData$periodName, ", ",f.outdata$years[3], "-", f.outdata$years[4])
 f.chartData$prevText <- paste0("Unemployment Rate: ",percent(f.chartData$prevUI*100), "<br>", f.chartData$periodName, ", ",f.outdata$years[2])
+if(f.chartData$ curYr > 0) {
 f.chartData$curText <- paste0("Unemployment Rate: ",percent(f.chartData$curUI*100), "<br>", f.chartData$periodName, ", ",f.outdata$years[1], "<br>",
                                "Number Employed ",f.chartData$periodName, ", ",f.outdata$years[1],": ",NumFmt(f.chartData$curYR), "<br>",
                                "Number Employed ",f.chartData$periodName, ", ",f.outdata$years[2],": ",NumFmt(f.chartData$prevYR), "<br>",
                                "Difference: ",NumFmt(f.chartData$diff))
-
+} else {
+  f.chartData$curText <- paste0("Unemployment Rate: ",percent(f.chartData$curUI*100), "<br>", f.chartData$periodName, ", ",f.outdata$years[1])
+  }
 # Chart Title
 total_tit <- paste0("Unemployment Rate ",ctyname)
 fig <- plot_ly(f.chartData, x = ~periodName, y = ~maxUI, type = 'scatter', mode = 'lines+markers',
