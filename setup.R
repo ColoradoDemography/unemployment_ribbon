@@ -225,15 +225,15 @@ GenPlot <- function(ctyfips, ctyname, dattype) {
   midSTR <- paste0("Midpoint of Unemployment Rate, ",f.outdata$years[3], "-", f.outdata$years[4])
   rngSTR <- paste0("Range of Unemployment Rate, ",f.outdata$years[3], "-", f.outdata$years[4])
   
-  captionSTR <- paste0("Data: Bureau of Labor Statistics API - Data not Seasonally Adjusted.<br>BLS.gov cannot vouch for the data or analyses derived from these data<br>after the data have been retrieved from BLS.gov.",
-                       "<br>Visualization by the State Demography Office, Print Date: ", format(Sys.Date(), "%m/%d/%Y"))
+  captionSTR <- paste0("Data: Bureau of Labor Statistics API - Data not Seasonally Adjusted. BLS.gov cannot vouch for the data or analyses derived from these data after the data have been retrieved from BLS.gov.",
+                       "<br>Visualization by the Colorado State Demography Office, Print Date: ", format(Sys.Date(), "%m/%d/%Y"))
   
   # tool tip text
   f.chartData$maxText <- paste0("Maximum Unemployment Rate: ",percent(f.chartData$maxUI*100), "<br>", f.chartData$periodName, ", ",f.outdata$years[3], "-", f.outdata$years[4])
   f.chartData$minText <- paste0("Minimum Unemployment Rate: ",percent(f.chartData$minUI*100), "<br>",  f.chartData$periodName, ", ",f.outdata$years[3], "-", f.outdata$years[4])
   f.chartData$midText <- paste0("Midpoint of Unemployment Rate: ",percent(f.chartData$midUI*100),"<br>", f.chartData$periodName, ", ",f.outdata$years[3], "-", f.outdata$years[4])
   f.chartData$prevText <- paste0("Unemployment Rate: ",percent(f.chartData$prevUI*100), "<br>", f.chartData$periodName, ", ",f.outdata$years[2])
-  if(f.chartData$curYR > 0) {
+  if(f.outdata$years[1] > 0) {
     f.chartData$curText <- paste0("Unemployment Rate: ",percent(f.chartData$curUI*100), "<br>", f.chartData$periodName, ", ",f.outdata$years[1], "<br>",
                                   "Number Employed ",f.chartData$periodName, ", ",f.outdata$years[1],": ",NumFmt(f.chartData$curYR), "<br>",
                                   "Number Employed ",f.chartData$periodName, ", ",f.outdata$years[2],": ",NumFmt(f.chartData$prevYR), "<br>",
@@ -243,11 +243,10 @@ GenPlot <- function(ctyfips, ctyname, dattype) {
   }
   # Chart Title
   total_tit <- paste0("Unemployment Rate ",ctyname)
-  fig <- plot_ly(f.chartData, x = ~periodName, y = ~maxUI, type = 'scatter', mode = 'lines+markers',
+  fig <- plot_ly(width = 1500, height = 500, f.chartData, x = ~periodName, y = ~maxUI, type = 'scatter', mode = 'lines+markers',
                  line = list(color = 'rgba(0,0,255,1)'),
                  name = rngSTR, text = ~maxText, hoverinfo = 'text') %>% 
-    config( toImageButtonOptions = list(format = "png", filename = total_tit,
-                                        width = 1450, height = 500))
+    config( toImageButtonOptions = list(format = "png", filename = total_tit))
   fig <- fig %>% add_trace(y = ~minUI, type = 'scatter', mode = 'lines+markers',
                            fill = 'tonexty', fillcolor='rgba(173,216,230,0.4)', line = list(color = 'rgba(0,0,255,1)'),
                            marker = list(color = 'rgba(0,0,255,1)'),
@@ -265,7 +264,7 @@ GenPlot <- function(ctyfips, ctyname, dattype) {
                            marker = list(color = 'rgba(255,0,0,1)'),
                            name = curSTR, text = ~curText, hoverinfo = 'text')
   
-  fig <- fig %>% layout(autosize = T,
+  fig <- fig %>% layout(margin = list(l = 50, r = 50, t = 60, b = 105),
                         title = titleSTR,
                         paper_bgcolor='rgb(255,255,255)', plot_bgcolor='rgb(229,229,229)',
                         hoverlabel = "right",
@@ -286,8 +285,9 @@ GenPlot <- function(ctyfips, ctyname, dattype) {
                                      tickcolor = 'rgb(127,127,127)',
                                      ticks = 'outside',
                                      zeroline = FALSE),
-                        annotations = list(text=captionSTR, xref = 'paper', x = 1.3,
-                                           yref = 'paper', y = 0.05,
+                        annotations = list(text=captionSTR, 
+                                           xref = 'paper', x = 0,
+                                           yref = 'paper', y = -0.25,
                                            align='left', showarrow=FALSE,
                                            font=list(size=10)))
   
